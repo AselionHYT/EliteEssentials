@@ -1,5 +1,16 @@
 # EliteEssentials
 
+> **Aselion fork.** This is the [Aselion](https://github.com/AselionHYT) fork of
+> [EliteScouter/EliteEssentials](https://github.com/EliteScouter/EliteEssentials), maintained for the
+> Aselion Adventure server. All credit for EliteEssentials goes to its author, **EliteScouter**, and its
+> contributors. Upstream has no LICENSE file; the author confirmed the project is MIT-licensed in
+> [issue #70](https://github.com/EliteScouter/EliteEssentials/issues/70), so this fork ships the MIT
+> licence text in [`LICENSE`](LICENSE) with EliteScouter as the copyright holder.
+>
+> Fork changes are listed in [`CHANGELOG.md`](CHANGELOG.md) under the `-aselion.N` versions; how to
+> pull upstream changes, port to a new Hytale patchline and release is in
+> [`MAINTAINING.md`](MAINTAINING.md).
+
 A comprehensive server essentials plugin for Hytale that brings everything you need to run a professional multiplayer server. From advanced teleportation systems and home management to group-based chat formatting and customizable kits - EliteEssentials has it all.
 
 **Fully modular design** - Enable only the features you want. **LuckPerms & HyperPerms compatible** - Seamless integration with advanced permission systems. **Actively developed** - Regular updates with new features and improvements.
