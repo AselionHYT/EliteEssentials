@@ -9,6 +9,7 @@ import com.eliteessentials.services.BackService;
 import com.eliteessentials.services.RtpService;
 import com.eliteessentials.services.WarmupService;
 import com.eliteessentials.util.CommandPermissionUtil;
+import com.eliteessentials.util.RtpSafety;
 import com.eliteessentials.util.MessageFormatter;
 import com.eliteessentials.util.PlayerSuggestionProvider;
 import com.eliteessentials.util.TeleportUtil;
@@ -33,7 +34,6 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
-import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -593,7 +593,8 @@ public class HytaleRtpCommand extends EliteCommandBase {
 
     
     private Integer findHighestSolidBlock(WorldChunk chunk, int x, int z, int minY) {
-        for (int y = 255; y >= minY; y--) {
+        // Scan from the top of the world: starting at 255 put players inside mountains above it.
+        for (int y = ChunkUtil.HEIGHT_MINUS_1; y >= minY; y--) {
             try {
                 BlockType blockType = chunk.getBlockType(x, y, z);
                 if (blockType != null && blockType.getMaterial() == BlockMaterial.Solid) {
@@ -608,47 +609,17 @@ public class HytaleRtpCommand extends EliteCommandBase {
     
     private boolean isSafeLocation(WorldChunk chunk, int x, int y, int z, boolean debug) {
         try {
-            Method getFluidIdMethod = chunk.getClass().getMethod("getFluidId", int.class, int.class, int.class);
-            
-            // Check vertical range
-            for (int yOffset = -2; yOffset <= 3; yOffset++) {
-                int checkY = y + yOffset;
-                if (checkY < 0 || checkY >= 256) continue;
-                
-                Object fluidIdObj = getFluidIdMethod.invoke(chunk, x, checkY, z);
-                if (fluidIdObj instanceof Integer) {
-                    int fluidId = (Integer) fluidIdObj;
-                    if (fluidId == 6 || fluidId == 7) {
-                        if (debug) {
-                            String fluidType = (fluidId == 6) ? "LAVA" : "WATER";
-                            logger.info("[RTP-SAFETY] " + fluidType + " detected at Y" + (yOffset >= 0 ? "+" : "") + yOffset);
-                        }
-                        return false;
-                    }
-                }
+            // Neighbours outside this chunk wrap to chunk-local coordinates, as before.
+            boolean safe = RtpSafety.isFluidFree(chunk::getFluidId, x, y, z, ChunkUtil.HEIGHT);
+            if (!safe && debug) {
+                logger.info("[RTP-SAFETY] Fluid detected around " + x + ", " + y + ", " + z);
             }
-            
-            // Check adjacent blocks
-            int[][] offsets = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-            for (int[] offset : offsets) {
-                int checkX = x + offset[0];
-                int checkZ = z + offset[1];
-                
-                Object fluidIdObj = getFluidIdMethod.invoke(chunk, checkX, y, checkZ);
-                if (fluidIdObj instanceof Integer) {
-                    int fluidId = (Integer) fluidIdObj;
-                    if (fluidId == 6 || fluidId == 7) {
-                        return false;
-                    }
-                }
-            }
-            
-            return true;
+            return safe;
         } catch (Exception e) {
             return true; // Assume safe if can't check
         }
     }
-    
+
     private void executeTeleport(CommandContext ctx, PlayerRef player,
                                   World world, UUID playerId, Location currentLoc,
                                   PluginConfig.RtpConfig rtpConfig,
