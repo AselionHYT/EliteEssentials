@@ -149,7 +149,7 @@ public class WarmupService {
             for (PendingWarmup warmup : pending.values()) {
                 try {
                     if (warmup.cancelled) {
-                        pending.remove(warmup.playerUuid);
+                        pending.remove(warmup.playerUuid, warmup);
                         continue;
                     }
                     
@@ -159,13 +159,13 @@ public class WarmupService {
                     if ((now - warmup.createdAtNanos) > MAX_WARMUP_LIFETIME_NANOS) {
                         logger.warning("[Warmup] Clearing stale warmup for " + warmup.playerUuid 
                             + " (" + warmup.commandName + ") - exceeded max lifetime");
-                        pending.remove(warmup.playerUuid);
+                        pending.remove(warmup.playerUuid, warmup);
                         continue;
                     }
                     
                     World world = warmup.world;
                     if (world == null) {
-                        pending.remove(warmup.playerUuid);
+                        pending.remove(warmup.playerUuid, warmup);
                         continue;
                     }
                     
@@ -177,7 +177,7 @@ public class WarmupService {
                     // was destroyed between the null check and the execute call.
                     logger.warning("[Warmup] Error polling warmup for " + warmup.playerUuid 
                         + " (" + warmup.commandName + "): " + e.getMessage() + " - removing");
-                    pending.remove(warmup.playerUuid);
+                    pending.remove(warmup.playerUuid, warmup);
                 }
             }
             
@@ -194,12 +194,20 @@ public class WarmupService {
     }
 
     private void tickWarmup(PendingWarmup warmup) {
+        // The poller queues a tick every POLL_INTERVAL_MS, but the world thread may run
+        // several queued ticks in one go. Only the warmup that is still pending may act;
+        // otherwise every queued tick after the deadline ran onComplete again (the
+        // teleport and its "Teleported to home" message showed up to 7 times).
+        if (warmup.cancelled || pending.get(warmup.playerUuid) != warmup) {
+            return;
+        }
+
         Store<EntityStore> store = warmup.store;
         Ref<EntityStore> ref = warmup.playerRef;
         
         // Validate ref is still valid before accessing components
         if (ref == null || !ref.isValid()) {
-            pending.remove(warmup.playerUuid);
+            pending.remove(warmup.playerUuid, warmup);
             return;
         }
         
@@ -209,14 +217,14 @@ public class WarmupService {
         PlayerRef playerRef = universe != null ? universe.getPlayer(warmup.playerUuid) : null;
 
         if (playerRef == null || !playerRef.isValid()) {
-            pending.remove(warmup.playerUuid);
+            pending.remove(warmup.playerUuid, warmup);
             return;
         }
         
         // Get current position
         Vector3d currentPos = getPlayerPosition(ref, store);
         if (currentPos == null) {
-            pending.remove(warmup.playerUuid);
+            pending.remove(warmup.playerUuid, warmup);
             return;
         }
         
@@ -224,7 +232,7 @@ public class WarmupService {
         
         // Check if player moved (using squared distance like HomeManager)
         if (hasMoved(warmup.startPos, currentPos)) {
-            pending.remove(warmup.playerUuid);
+            pending.remove(warmup.playerUuid, warmup);
             playerRef.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("warmupCancelled"), "#FF5555"));
             return;
         }
@@ -234,8 +242,11 @@ public class WarmupService {
         long remainingNanos = warmup.endTimeNanos - now;
         
         if (remainingNanos <= 0) {
-            // Warmup complete - execute the teleport
-            pending.remove(warmup.playerUuid);
+            // Warmup complete - execute the teleport, exactly once: only the tick that
+            // removes this warmup from the map may run it.
+            if (!pending.remove(warmup.playerUuid, warmup)) {
+                return;
+            }
             
             // Final validation before executing teleport
             if (ref == null || !ref.isValid()) {
