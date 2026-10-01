@@ -15,7 +15,11 @@ public class Kit {
     private final int cooldown; // in seconds, 0 = no cooldown
     private final boolean replaceInventory;
     private final boolean onetime; // true = can only be claimed once ever
-    private final boolean starterKit; // true = auto-given to new players
+    /**
+     * true = auto-given to new players on first join, false = never. null (field absent in
+     * kits.json) keeps upstream's rule: the kit whose id is "starter" is the first-join kit.
+     */
+    private final Boolean starterKit;
     private final List<KitItem> items;
     private List<String> commands; // commands to execute on claim, supports {player}
 
@@ -45,7 +49,7 @@ public class Kit {
     public int getCooldown() { return cooldown; }
     public boolean isReplaceInventory() { return replaceInventory; }
     public boolean isOnetime() { return onetime; }
-    public boolean isStarterKit() { return starterKit; }
+    public boolean isStarterKit() { return starterKit != null ? starterKit : "starter".equalsIgnoreCase(id); }
     public List<KitItem> getItems() { return items; }
 
     public List<String> getCommands() {

@@ -19,6 +19,9 @@ fork.
 * **RTP could land in water or lava** - the fluid check compared against fixed ids that do not match Hytale's fluid
   ids. Every non-empty fluid now makes a spot unsafe (the approach of upstream PR #69 by xoydev)
 * **RTP could land inside terrain above y=255** - the ground scan started at 255; it now starts at the world top (319)
+* **`"starterKit": false` was ignored** - a kit with the id `starter` was always handed out on first join, whatever
+  its `starterKit` flag said, so it also reached players without the kit's permission. The flag now decides; a kit
+  without the flag keeps the old rule (id `starter` = first-join kit)
 * **SLF4J "Failed to load class org.slf4j.impl.StaticLoggerBinder" logged as SEVERE at boot** - the bundled HikariCP
   now has an SLF4J binding (java.util.logging)
 

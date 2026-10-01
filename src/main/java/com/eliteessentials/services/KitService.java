@@ -347,8 +347,9 @@ public class KitService {
     public List<Kit> getStarterKits() {
         List<Kit> starters = new ArrayList<>();
         for (Kit kit : kits.values()) {
-            // A kit is a starter kit if its ID is "starter" (case-insensitive)
-            if (kit.getId().equalsIgnoreCase("starter")) {
+            // The kit's starterKit flag decides; without the flag, a kit with the ID
+            // "starter" (case-insensitive) is the starter kit, as before.
+            if (kit.isStarterKit()) {
                 starters.add(kit);
             }
         }
