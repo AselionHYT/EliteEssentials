@@ -164,6 +164,7 @@ public class PluginConfig {
         messages.put("homeTeleported", "&aTeleported to home &e'{name}'&a.");
         messages.put("homeWarmup", "&eTeleporting to home &a'{name}' &ein &a{seconds} &eseconds... Stand still!");
         messages.put("homeSet", "&aHome &e'{name}' &ahas been set!");
+        messages.put("homeInForeignClaim", "&cYou cannot set a home inside another party's claim.");
         messages.put("homeLimitReached", "&cYou have reached your home limit &7({max})&c.");
         messages.put("homeInvalidName", "&cInvalid home name.");
         messages.put("homeSetFailed", "&cFailed to set home.");
@@ -1093,6 +1094,13 @@ public class PluginConfig {
         
         /** Cost to set a home (0 = free, requires economy enabled) */
         public double setHomeCost = 0.0;
+
+        /**
+         * Refuse /sethome inside a chunk claimed in SimpleClaims by a party the player is
+         * neither a member of nor allied with (a SimpleClaims admin override is allowed).
+         * Has no effect when SimpleClaims is not installed.
+         */
+        public boolean denyInForeignClaims = true;
     }
 
     // ==================== SPAWN ====================

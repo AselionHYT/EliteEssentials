@@ -1,5 +1,8 @@
 package com.eliteessentials.commands.hytale;
 
+import com.eliteessentials.integration.ClaimsIntegration;
+import com.hypixel.hytale.math.util.MathUtil;
+
 import com.eliteessentials.EliteEssentials;
 import com.eliteessentials.config.ConfigManager;
 import com.eliteessentials.model.Location;
@@ -114,6 +117,12 @@ public class HytaleSetHomeCommand extends ElitePlayerCommand {
             rotation.y,  // yaw=rotation.y
             rotation.x   // pitch=rotation.x
         );
+
+        if (config.homes.denyInForeignClaims && ClaimsIntegration.get().isForeignClaim(
+                playerId, worldName, MathUtil.floor(position.x), MathUtil.floor(position.z))) {
+            ctx.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("homeInForeignClaim"), "#FF5555"));
+            return;
+        }
 
         HomeService.Result result = homeService.setHome(playerId, homeName, location);
 

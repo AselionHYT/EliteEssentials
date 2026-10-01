@@ -8,6 +8,7 @@ import com.eliteessentials.permissions.PermissionService;
 import com.eliteessentials.services.BackService;
 import com.eliteessentials.services.RtpService;
 import com.eliteessentials.services.WarmupService;
+import com.eliteessentials.integration.ClaimsIntegration;
 import com.eliteessentials.util.CommandPermissionUtil;
 import com.eliteessentials.util.RtpSafety;
 import com.eliteessentials.util.MessageFormatter;
@@ -426,6 +427,12 @@ public class HytaleRtpCommand extends EliteCommandBase {
                        ", angle: " + String.format("%.1f", Math.toDegrees(angle)) + "°)");
         }
         
+        if (isClaimed(world, targetX, targetZ, debug)) {
+            tryNextLocation(ctx, store, ref, player, world, playerId, centerX, centerZ,
+                           currentLoc, rtpConfig, attempt + 1, isAdminRtp);
+            return;
+        }
+
         long chunkIndex = ChunkUtil.indexChunkFromBlock(targetX, targetZ);
         
         // Check if already loaded first (fast path)
@@ -495,6 +502,11 @@ public class HytaleRtpCommand extends EliteCommandBase {
         double targetX = centerX + Math.cos(angle) * distance;
         double targetZ = centerZ + Math.sin(angle) * distance;
         
+        if (isClaimed(world, targetX, targetZ, configManager.isDebugEnabled())) {
+            tryNextLocationCrossWorld(ctx, player, world, playerId, centerX, centerZ, rtpConfig, attempt + 1, isAdminRtp);
+            return;
+        }
+
         long chunkIndex = ChunkUtil.indexChunkFromBlock(targetX, targetZ);
         
         WorldChunk chunk = world.getChunkIfLoaded(chunkIndex);
@@ -592,6 +604,22 @@ public class HytaleRtpCommand extends EliteCommandBase {
     }
 
     
+    /**
+     * RTP never lands in a chunk claimed in SimpleClaims (no-op without SimpleClaims).
+     * Checked before the chunk is loaded, so claimed targets cost no chunk load.
+     */
+    private boolean isClaimed(World world, double targetX, double targetZ, boolean debug) {
+        int blockX = MathUtil.floor(targetX);
+        int blockZ = MathUtil.floor(targetZ);
+        if (!ClaimsIntegration.get().isClaimed(world.getName(), blockX, blockZ)) {
+            return false;
+        }
+        if (debug) {
+            logger.info("[RTP] " + blockX + ", " + blockZ + " is in a claimed chunk, trying next location");
+        }
+        return true;
+    }
+
     private Integer findHighestSolidBlock(WorldChunk chunk, int x, int z, int minY) {
         // Scan from the top of the world: starting at 255 put players inside mountains above it.
         for (int y = ChunkUtil.HEIGHT_MINUS_1; y >= minY; y--) {

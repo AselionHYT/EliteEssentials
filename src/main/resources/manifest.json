@@ -14,7 +14,8 @@
   "OptionalDependencies": {
     "HelpChat:PlaceholderAPI": "*",
     "net.milkbowl:VaultUnlocked": "*",
-    "Economy:EconomySystem": "*"
+    "Economy:EconomySystem": "*",
+    "Buuz135:SimpleClaims": "*"
   },
   "DisabledByDefault": false,
   "IncludesAssetPack": true
