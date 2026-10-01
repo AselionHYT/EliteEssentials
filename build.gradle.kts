@@ -5,7 +5,7 @@ plugins {
 }
 
 group = findProperty("pluginGroup") as String? ?: "com.eliteessentials"
-version = findProperty("pluginVersion") as String? ?: "2.0.11"
+version = findProperty("pluginVersion") as String? ?: "2.0.11-aselion.1"
 description = findProperty("pluginDescription") as String? ?: "Essential commands for Hytale servers"
 
 repositories {
@@ -29,8 +29,10 @@ repositories {
 
 dependencies {
     // Hytale Server API (provided by server at runtime)
-    val serverVersion = findProperty("serverVersion") as String? ?: "0.6.1"
+    val serverVersion = findProperty("serverVersion") as String? ?: "0.6.8"
     compileOnly("com.hypixel.hytale:Server:$serverVersion")
+    // Tests construct engine command objects, so they need the server API at runtime.
+    testImplementation("com.hypixel.hytale:Server:$serverVersion")
 
     compileOnly("at.helpch:placeholderapi-hytale:1.0.4")
 
@@ -46,6 +48,11 @@ dependencies {
 
     // SQL storage support
     implementation("com.zaxxer:HikariCP:6.2.1")
+    // HikariCP logs through SLF4J 1.7. Without a binding, SLF4J prints three
+    // "Failed to load class org.slf4j.impl.StaticLoggerBinder" lines to stderr,
+    // which the server logs as SEVERE. The JDK 1.4 binding routes Hikari's logs into
+    // java.util.logging (the server's logger); it is relocated with slf4j-api below.
+    implementation("org.slf4j:slf4j-jdk14:1.7.36")
     implementation("org.xerial:sqlite-jdbc:3.47.1.0")
     implementation("com.mysql:mysql-connector-j:9.1.0")
     
@@ -73,7 +80,7 @@ tasks {
             "group" to project.group,
             "version" to project.version,
             "description" to project.description,
-            "serverVersion" to (findProperty("serverVersion") as String? ?: "0.6.1")
+            "serverVersion" to (findProperty("serverVersion") as String? ?: "0.6.8")
         )
         inputs.properties(props)
         
@@ -105,6 +112,8 @@ tasks {
     
     test {
         useJUnitPlatform()
+        // The server's HytaleLogger refuses to initialise under the default JUL manager.
+        systemProperty("java.util.logging.manager", "com.hypixel.hytale.logger.backend.HytaleLogManager")
     }
     
     build {
