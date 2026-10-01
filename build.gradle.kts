@@ -89,6 +89,13 @@ tasks {
         }
     }
     
+    // Same sources give the same jar bytes (stable entry order, no timestamps), so a CI
+    // release can be compared with a local build.
+    withType<AbstractArchiveTask>().configureEach {
+        isPreserveFileTimestamps = false
+        isReproducibleFileOrder = true
+    }
+
     shadowJar {
         archiveBaseName.set(rootProject.name)
         archiveClassifier.set("")

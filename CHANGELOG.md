@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.0.11-aselion.1 - 2026-10-01
+
+First release of the Aselion fork, based on upstream 2.0.11 (`7fe6a726`). Built against Hytale server `0.6.8`
+(`ServerVersion` `^0.6.8`). Upstream's 2.0.10 CurseForge build was never committed to git, so it is not part of this
+fork.
+
+### Fixed
+* **Argument forms of commands needed an extra engine node** - `/home <name>`, `/sethome <name>`, `/delhome <name>`,
+  `/tpa <player>`, `/tpahere <player>` (and the other usage variants: `/playtime <player>`, `/joindate <player>`,
+  `/setspawn <name>`, `/warpadmin ...`, `/sleeppercent <n>`, `/wallet ...`) were refused with
+  `noPermissionForCommand` unless the player also had `com.eliteessentials.eliteessentials.command.<cmd>`. Hytale 0.6
+  marks a variant as registered as soon as it is added to its parent, so the permission opt-out, which ran later, never
+  reached it. The opt-out now runs when the variant is added
+* **"Teleported to home" printed several times** - a warmup could complete more than once when the world thread ran
+  several queued warmup ticks at once, teleporting and messaging the player each time. A warmup now completes exactly
+  once (affects every command with a warmup)
+* **RTP could land in water or lava** - the fluid check compared against fixed ids that do not match Hytale's fluid
+  ids. Every non-empty fluid now makes a spot unsafe (the approach of upstream PR #69 by xoydev)
+* **RTP could land inside terrain above y=255** - the ground scan started at 255; it now starts at the world top (319)
+* **SLF4J "Failed to load class org.slf4j.impl.StaticLoggerBinder" logged as SEVERE at boot** - the bundled HikariCP
+  now has an SLF4J binding (java.util.logging)
+
+### Added
+* **SimpleClaims support (optional)** - with SimpleClaims installed, RTP never lands in a claimed chunk, and `/sethome`
+  is refused inside a chunk claimed by a party the player is not a member of or allied with (SimpleClaims admin
+  override allowed). New option `homes.denyInForeignClaims` (default `true`) and message `homeInForeignClaim`. Without
+  SimpleClaims nothing changes
+* `LICENSE` (MIT, as confirmed by the author in upstream issue #70), GitHub Actions build and tag release
+
 ## 2.0.11 - 2026-08-27
 
 Compatibility release for Hytale server `0.6.1`. **If you have updated your server to `0.6.x`, this release is required.** Older builds crash the world the moment a player finishes connecting, which leaves the server unjoinable. Nothing in your config, permissions, or data files needs to change; drop the new jar in and restart.
