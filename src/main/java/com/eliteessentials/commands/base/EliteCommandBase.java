@@ -1,5 +1,6 @@
 package com.eliteessentials.commands.base;
 
+import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandOwner;
 import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
 
@@ -36,5 +37,11 @@ public abstract class EliteCommandBase extends CommandBase {
     public void setOwner(CommandOwner owner) {
         CommandPermissionCompat.applyNoPermission(this, canGeneratePermission());
         super.setOwner(owner);
+    }
+
+    @Override
+    public void addUsageVariant(AbstractCommand command) {
+        CommandPermissionCompat.applyNoPermissionToVariant(command);
+        super.addUsageVariant(command);
     }
 }

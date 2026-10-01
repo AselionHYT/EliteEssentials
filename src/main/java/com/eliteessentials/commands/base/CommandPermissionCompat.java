@@ -27,4 +27,25 @@ final class CommandPermissionCompat {
         }
         command.requireNoPermission();
     }
+
+    /**
+     * Applies a usage variant's opt-out before it is attached to its parent.
+     *
+     * <p>Hytale 0.6 marks a variant as registered inside {@code addUsageVariant(...)}
+     * ({@code hasBeenRegistered = true}), long before {@code setOwner(...)} runs. The
+     * opt-out in {@code setOwner} is therefore skipped for variants, and the engine then
+     * generates the parent's node for them (for example
+     * {@code com.eliteessentials.eliteessentials.command.home} for {@code /home <name>}).
+     * Opting out here, while the variant still accepts permission changes, keeps the
+     * variant as open as its parent.
+     */
+    static void applyNoPermissionToVariant(AbstractCommand variant) {
+        boolean canGeneratePermission = true;
+        if (variant instanceof ElitePlayerCommand playerCommand) {
+            canGeneratePermission = playerCommand.canGeneratePermission();
+        } else if (variant instanceof EliteCommandBase commandBase) {
+            canGeneratePermission = commandBase.canGeneratePermission();
+        }
+        applyNoPermission(variant, canGeneratePermission);
+    }
 }
