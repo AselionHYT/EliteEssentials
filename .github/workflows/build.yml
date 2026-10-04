@@ -55,8 +55,11 @@ jobs:
           version="$(sed -n 's/^pluginVersion=//p' gradle.properties)"
           server="$(sed -n 's/^serverVersion=//p' gradle.properties)"
           (cd dist && sha256sum "EliteEssentials-${version}.jar" > "EliteEssentials-${version}.jar.sha256")
+          # A version with a -pre suffix (e.g. 2.0.11-aselion.1-pre0.7.1) is a pre-release and never "latest".
+          prerelease=""
+          case "${version}" in *-pre*) prerelease="--prerelease --latest=false" ;; esac
           gh release create "${GITHUB_REF_NAME}" \
             "dist/EliteEssentials-${version}.jar" "dist/EliteEssentials-${version}.jar.sha256" \
-            --verify-tag \
+            --verify-tag ${prerelease} \
             --title "EliteEssentials ${version} (Aselion build for Hytale ${server})" \
             --notes "Built by GitHub Actions from ${GITHUB_SHA}. Changes: see CHANGELOG.md."

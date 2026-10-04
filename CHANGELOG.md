@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.11-aselion.1-pre0.7.1 - 2026-10-04
+
+Pre-release build for the Hytale 0.7 pre-release line, built against server `0.7.0-pre.5.1` (`ServerVersion`
+`^0.7.0-pre.5.1`). Does not load on 0.6: use 2.0.11-aselion.1 there. Same features as 2.0.11-aselion.1.
+
+### Changed
+* **Ported to the Hytale 0.7 API** - block and chunk access goes through the section reader that replaced the
+  `World`/`WorldChunk` getters (RTP, `/top`, `/fly` safe landing, alias `/top`, the spawn-protection block checks), the
+  spawn providers implement `getSpawnPointAsync`, and the home pages call the renamed
+  `clearLegacyCustomPageAcknowledgements`. RTP's fluid check now reads neighbouring blocks across chunk borders
+  instead of wrapping inside the chunk
+
 ## 2.0.11-aselion.1 - 2026-10-01
 
 First release of the Aselion fork, based on upstream 2.0.11 (`7fe6a726`). Built against Hytale server `0.6.8`

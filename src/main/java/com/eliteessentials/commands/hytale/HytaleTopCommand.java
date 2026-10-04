@@ -1,5 +1,7 @@
 package com.eliteessentials.commands.hytale;
 
+import com.eliteessentials.util.WorldBlocks;
+import com.hypixel.hytale.server.core.universe.world.accessor.SectionReader;
 import com.eliteessentials.config.ConfigManager;
 import com.eliteessentials.config.PluginConfig;
 import com.eliteessentials.permissions.Permissions;
@@ -25,7 +27,6 @@ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponen
 
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.UUID;
@@ -107,14 +108,13 @@ public class HytaleTopCommand extends ElitePlayerCommand {
 
         // Get chunk at player's position
         long chunkIndex = ChunkUtil.indexChunkFromBlock(blockX, blockZ);
-        WorldChunk chunk = world.getChunk(chunkIndex);
-        if (chunk == null) {
+        if (!WorldBlocks.isColumnInMemory(world, chunkIndex)) {
             ctx.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("topChunkNotLoaded"), "#FF5555"));
             return;
         }
 
         // Find highest solid block from top down
-        Integer topY = findHighestSolidBlock(chunk, blockX, blockZ);
+        Integer topY = findHighestSolidBlock(WorldBlocks.reader(world), blockX, blockZ);
         if (topY == null) {
             ctx.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("topNoGround"), "#FF5555"));
             return;
@@ -161,9 +161,9 @@ public class HytaleTopCommand extends ElitePlayerCommand {
      * Finds the highest solid block at the given X/Z position.
      * @return Y coordinate of highest solid block, or null if none found
      */
-    private Integer findHighestSolidBlock(WorldChunk chunk, int x, int z) {
+    private Integer findHighestSolidBlock(SectionReader blocks, int x, int z) {
         for (int y = MAX_HEIGHT; y >= 0; y--) {
-            BlockType blockType = chunk.getBlockType(x, y, z);
+            BlockType blockType = WorldBlocks.blockType(blocks, x, y, z);
             if (blockType != null && blockType.getMaterial() == BlockMaterial.Solid) {
                 return y;
             }
