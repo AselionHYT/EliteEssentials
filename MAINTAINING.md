@@ -14,8 +14,9 @@ made cheap.
     ./gradlew build                       # jar in build/libs/, runs the unit tests
 
 Requirements: JDK 25. The server API (`com.hypixel.hytale:Server`) comes from `https://maven.hytale.com/release` (and
-`/pre-release`); its version is `serverVersion` in `gradle.properties` and also sets the manifest's `ServerVersion`
-range (`^<serverVersion>`, i.e. up to the next minor). Override it for a trial build with
+`/pre-release`); its version is `serverVersion` in `gradle.properties`. The manifest's `ServerVersion` range is
+written out in `src/main/resources/manifest.json` (the whole 0.7 line, pre-releases included) and does not follow
+`serverVersion`. Override the API version for a trial build with
 `./gradlew build -PserverVersion=<version>`. The published versions are listed in
 `https://maven.hytale.com/release/com/hypixel/hytale/Server/maven-metadata.xml`.
 
@@ -60,8 +61,8 @@ Things worth watching upstream, since the fork works around them:
 2. Trial build on a branch: `./gradlew build -PserverVersion=<version>`. The compiler errors are the API breaks;
    `[removal]` warnings are the next ones. The Hytale sources (`hytale-shared-source`, branches `release` and
    `pre-release`) show what replaced a removed method.
-3. Fix the breaks, then set `serverVersion` in `gradle.properties`. A minor change (`0.6` to `0.7`) always needs a new
-   build, because the manifest range `^0.6.8` stops at `<0.7.0`; on a newer minor the server only logs a version
+3. Fix the breaks, then set `serverVersion` in `gradle.properties` and the `ServerVersion` range in
+   `manifest.json`. A minor change (`0.6` to `0.7`) always needs a new build, because the range stops at the next minor; on a newer minor the server only logs a version
    mismatch but the plugin is loaded, and any changed method fails at runtime with `NoSuchMethodError` or
    `AbstractMethodError`.
 4. Run the unit tests. `VariantPermissionTest.engineMarksVariantAsRegisteredWhenItIsAdded` checks the engine behaviour
@@ -91,8 +92,10 @@ What 0.7 changed and how the branch handles it:
   "no solid block" as "try the next spot".
 - `PageManager.clearCustomPageAcknowledgements()` was renamed to `clearLegacyCustomPageAcknowledgements()` (same
   body); `HomeEditPage` and `HomeSelectionPage` call the new name.
-- The manifest range `^0.7.0-pre.5.1` matches the pre-releases: the server only accepts a pre-release version for a
-  range that names one.
+- The manifest range is `>=0.7.0 <0.8.0 || >=0.7.0-pre.1 <0.8.0`: the server only accepts a pre-release version for
+  a range that names one, and `^0.7.0` (what a re-pin to the final 0.7.0 would have produced from the old
+  `^<serverVersion>` template) rejects `0.7.0-pre.5.1`. Checked against the server's own `SemverRange`: the range
+  accepts `0.7.0-pre.5.1`, `0.7.0` and `0.7.1`, rejects `0.6.8` and `0.8.0`.
 
 Verified: compiles, unit tests pass, the plugin enables on a `0.7.0-pre.5.1` Adventure server without a SEVERE line,
 `/eliteessentials reload` works from the console, and with `economy.enabled` it registers as VaultUnlocked economy
