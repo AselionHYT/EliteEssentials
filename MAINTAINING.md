@@ -14,8 +14,9 @@ made cheap.
     ./gradlew build                       # jar in build/libs/, runs the unit tests
 
 Requirements: JDK 25. The server API (`com.hypixel.hytale:Server`) comes from `https://maven.hytale.com/release` (and
-`/pre-release`); its version is `serverVersion` in `gradle.properties` and also sets the manifest's `ServerVersion`
-range (`^<serverVersion>`, i.e. up to the next minor). Override it for a trial build with
+`/pre-release`); its version is `serverVersion` in `gradle.properties`. The manifest's `ServerVersion` range is
+written out in `src/main/resources/manifest.json` (the whole 0.7 line, pre-releases included) and does not follow
+`serverVersion`. Override the API version for a trial build with
 `./gradlew build -PserverVersion=<version>`. The published versions are listed in
 `https://maven.hytale.com/release/com/hypixel/hytale/Server/maven-metadata.xml`.
 
@@ -60,8 +61,8 @@ Things worth watching upstream, since the fork works around them:
 2. Trial build on a branch: `./gradlew build -PserverVersion=<version>`. The compiler errors are the API breaks;
    `[removal]` warnings are the next ones. The Hytale sources (`hytale-shared-source`, branches `release` and
    `pre-release`) show what replaced a removed method.
-3. Fix the breaks, then set `serverVersion` in `gradle.properties`. A minor change (`0.6` to `0.7`) always needs a new
-   build, because the manifest range `^0.6.8` stops at `<0.7.0`; on a newer minor the server only logs a version
+3. Fix the breaks, then set `serverVersion` in `gradle.properties` and the `ServerVersion` range in
+   `manifest.json`. A minor change (`0.6` to `0.7`) always needs a new build, because the range stops at the next minor; on a newer minor the server only logs a version
    mismatch but the plugin is loaded, and any changed method fails at runtime with `NoSuchMethodError` or
    `AbstractMethodError`.
 4. Run the unit tests. `VariantPermissionTest.engineMarksVariantAsRegisteredWhenItIsAdded` checks the engine behaviour
@@ -71,20 +72,38 @@ Things worth watching upstream, since the fork works around them:
    <player>`, `/rtp` (not into claims or fluids), `/sethome` in a foreign claim refused, `/kit starter` once.
 6. Release with a version that says which line it is for if both lines need builds at the same time.
 
-### Status of the 0.7 port (2026-10-01)
+### Status of the 0.7 port (2026-10-04)
 
-Branch `port/hytale-0.7`:
+Branch `port/hytale-0.7`, builds against `0.7.0-pre.5.1` (the newest pre-release and, since 2026-10-02, the version
+of our pre-release line). Pre-release builds are tagged `v<version>-pre0.7.<n>`; the branch is not merged into `main`
+while production runs 0.6.
 
-- **0.7.0-pre.3.1** (our pre-release line): one break. `ISpawnProvider.getSpawnPoint(World, UUID)` became
-  `getSpawnPointAsync(World, UUID)` returning `CompletableFuture<Transform>`; `NearestSpawnProvider` and
-  `RandomSpawnProvider` now return a completed future. Compiles, unit tests pass. Not tested on a server and not
-  released.
-- **0.7.0-pre.5**: 20 more compile errors. Chunk access moved: `World.getChunkIfLoaded(long)`,
-  `getChunkIfInMemory(long)`, `getChunkAsync(long)`, `IWorldChunks.getChunk(long)`,
-  `WorldChunk.getBlockType(int, int, int)`, `getBlockType(Vector3i)` and `WorldChunk.getFluidId` are gone (RTP, `/top`,
-  `/fly`, `FlyService`, `AliasService`, `SpawnUseBlockInteraction`), and `clearCustomPageAcknowledgements()` is gone
-  (`HomeEditPage`, `HomeSelectionPage`). On pre.3.1 the same methods are already marked `forRemoval`. This is a real
-  port (RTP's chunk loading in particular), not a rename.
+What 0.7 changed and how the branch handles it:
+
+- `ISpawnProvider.getSpawnPoint(World, UUID)` became `getSpawnPointAsync(World, UUID)` returning
+  `CompletableFuture<Transform>` (already in pre.3.1). `NearestSpawnProvider` and `RandomSpawnProvider` return a
+  completed future.
+- Block and chunk access left `World` and `WorldChunk` in pre.5 (`getChunk`, `getChunkIfLoaded`, `getChunkIfInMemory`,
+  `getChunkAsync`, `getBlockType`, `getFluidId`). Blocks are read per section through
+  `com.hypixel.hytale.server.core.universe.world.accessor.SectionReader`, a column is loaded through
+  `ChunkStore.getChunkReferenceAsync`. All call sites (RTP, `/top`, `/fly`, `FlyService`, `AliasService`,
+  `SpawnUseBlockInteraction`) go through `util/WorldBlocks`, which is the only class that knows this API. A reader loads
+  nothing: a position in a section that is not in memory reads as empty, so RTP loads the column first and treats
+  "no solid block" as "try the next spot".
+- `PageManager.clearCustomPageAcknowledgements()` was renamed to `clearLegacyCustomPageAcknowledgements()` (same
+  body); `HomeEditPage` and `HomeSelectionPage` call the new name.
+- The manifest range is `>=0.7.0 <0.8.0 || >=0.7.0-pre.1 <0.8.0`: the server only accepts a pre-release version for
+  a range that names one, and `^0.7.0` (what a re-pin to the final 0.7.0 would have produced from the old
+  `^<serverVersion>` template) rejects `0.7.0-pre.5.1`. Checked against the server's own `SemverRange`: the range
+  accepts `0.7.0-pre.5.1`, `0.7.0` and `0.7.1`, rejects `0.6.8` and `0.8.0`.
+
+Verified: compiles, unit tests pass, the plugin enables on a `0.7.0-pre.5.1` Adventure server without a SEVERE line,
+`/eliteessentials reload` works from the console, and with `economy.enabled` it registers as VaultUnlocked economy
+provider. **Not verified:** anything a player has to trigger (`/rtp`, `/top`, `/fly` safe landing, the home pages),
+because `hytale-bot` only speaks the 0.6.8 protocol; step 5 above is still open for 0.7.
+
+Still marked for removal in 0.7 (warnings, next break): `Inventory.getHotbar()`, `getStorage()`,
+`getActiveHotbarSlot()` (`AliasService`) and `getCombinedHotbarFirst()` (`InventoryViewWindow`).
 
 ## Release
 

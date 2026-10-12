@@ -195,7 +195,8 @@ public class JoinQuitListener {
 
         UUID playerId = playerRef.getUuid();
         String playerName = playerRef.getUsername();
-        String worldName = event.getWorld() != null ? event.getWorld().getName() : "unknown";
+        // Hytale 0.7.0 split getWorld() into source and destination; the old value was the destination.
+        String worldName = event.getDestinationWorld() != null ? event.getDestinationWorld().getName() : "unknown";
 
         // Mark as potentially changing worlds
         worldChangingPlayers.add(playerId);

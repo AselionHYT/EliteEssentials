@@ -1,5 +1,6 @@
 package com.eliteessentials.interactions;
 
+import com.eliteessentials.util.WorldBlocks;
 import com.eliteessentials.EliteEssentials;
 import com.eliteessentials.services.SpawnProtectionService;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -134,7 +135,7 @@ public class SpawnUseBlockInteraction extends UseBlockInteraction {
      * or toggle states, rather than being "picked up" into inventory.
      */
     private boolean isFunctionalBlock(World world, Vector3i targetBlock) {
-        var blockType = world.getBlockType(targetBlock);
+        var blockType = WorldBlocks.blockType(world, targetBlock);
         if (blockType == null) return false;
         String blockName = blockType.getId().toLowerCase(Locale.ROOT);
         return blockName.contains("chest") ||
@@ -161,7 +162,7 @@ public class SpawnUseBlockInteraction extends UseBlockInteraction {
      * pickup protection messages since they can't be picked up anyway.
      */
     private boolean isHarvestableBlock(World world, Vector3i targetBlock) {
-        var blockType = world.getBlockType(targetBlock);
+        var blockType = WorldBlocks.blockType(world, targetBlock);
         return BlockHarvestUtils.shouldPickupByInteraction(blockType);
     }
 }

@@ -1,5 +1,7 @@
 package com.eliteessentials.commands.hytale;
 
+import com.eliteessentials.util.WorldBlocks;
+import com.hypixel.hytale.server.core.universe.world.accessor.SectionReader;
 import com.eliteessentials.api.EconomyAPI;
 import com.eliteessentials.config.ConfigManager;
 import com.eliteessentials.config.PluginConfig;
@@ -35,7 +37,6 @@ import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
@@ -262,10 +263,9 @@ public class HytaleFlyCommand extends EliteCommandBase {
             int blockZ = (int) Math.floor(pos.z);
 
             long chunkIndex = ChunkUtil.indexChunkFromBlock(blockX, blockZ);
-            WorldChunk chunk = world.getChunk(chunkIndex);
-            if (chunk == null) return;
+            if (!WorldBlocks.isColumnInMemory(world, chunkIndex)) return;
 
-            Integer groundY = findHighestSolidBlock(chunk, blockX, blockZ, (int) pos.y);
+            Integer groundY = findHighestSolidBlock(WorldBlocks.reader(world), blockX, blockZ, (int) pos.y);
             if (groundY == null) return;
 
             // Only teleport if player is above the ground (would actually fall)
@@ -294,10 +294,10 @@ public class HytaleFlyCommand extends EliteCommandBase {
     /**
      * Finds the highest solid block at the given X/Z position, starting from the player's Y level downward.
      */
-    private Integer findHighestSolidBlock(WorldChunk chunk, int x, int z, int startY) {
+    private Integer findHighestSolidBlock(SectionReader blocks, int x, int z, int startY) {
         int scanFrom = Math.min(startY, MAX_HEIGHT);
         for (int y = scanFrom; y >= 0; y--) {
-            BlockType blockType = chunk.getBlockType(x, y, z);
+            BlockType blockType = WorldBlocks.blockType(blocks, x, y, z);
             if (blockType != null && blockType.getMaterial() == BlockMaterial.Solid) {
                 return y;
             }

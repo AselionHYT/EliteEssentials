@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.spawn.ISpawnProvider;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Custom spawn provider that returns the nearest spawn to the player's death location.
@@ -27,7 +28,12 @@ public final class NearestSpawnProvider implements ISpawnProvider {
     }
 
     @Override
-    public Transform getSpawnPoint(World world, UUID playerId) {
+    public CompletableFuture<Transform> getSpawnPointAsync(World world, UUID playerId) {
+        // Hytale 0.7 made spawn lookup asynchronous; this provider answers immediately.
+        return CompletableFuture.completedFuture(getSpawnPoint(world, playerId));
+    }
+
+    private Transform getSpawnPoint(World world, UUID playerId) {
         double x, z;
         double[] stored = deathPositionCache.peek(playerId);
         if (stored != null && stored.length >= 2) {
