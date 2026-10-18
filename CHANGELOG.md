@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.11-aselion.2 - 2026-10-18
+
+Built against the released Hytale server `0.7.0` (`ServerVersion` `>=0.7.0 <0.8.0 || >=0.7.0-pre.1 <0.8.0`).
+
+### Added
+* **Per-world home limits** - `homes.worldHomeLimits` (e.g. `{"farm": 1}`) gives a listed world its own home budget:
+  homes in that world count only against its limit, not against `maxHomes`, and homes elsewhere do not count against
+  it. Overwriting a home in the same budget is always allowed; moving a home into another budget counts there. A
+  negative value means unlimited in that world. Empty (default) keeps one limit for all worlds. The homes page shows
+  the count of homes against `maxHomes`; the limit message of `/sethome` names the limit of the current world
+
+### Fixed
+* **Leaving a world read the wrong world** - Hytale 0.7.0 split `DrainPlayerFromWorldEvent.getWorld()` into
+  `getSourceWorld()` and `getDestinationWorld()`; the join/quit listener now reads the destination
+
 ## 2.0.11-aselion.1-pre0.7.1 - 2026-10-04
 
 Pre-release build for the Hytale 0.7 pre-release line, built against server `0.7.0-pre.5.1` (`ServerVersion`

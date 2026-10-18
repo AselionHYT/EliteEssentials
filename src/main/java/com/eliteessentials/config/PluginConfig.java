@@ -1082,6 +1082,13 @@ public class PluginConfig {
         
         /** Default max homes for new players */
         public int defaultMaxHomes = 3;
+
+        /**
+         * Worlds with their own home limit, e.g. {"farm": 1}. Homes in a listed world count only
+         * against that world's limit, not against maxHomes; homes elsewhere ignore them.
+         * A negative value means unlimited in that world. Empty = one limit for all worlds.
+         */
+        public Map<String, Integer> worldHomeLimits = new HashMap<>();
         
         /** Cooldown in seconds between /home uses (0 = no cooldown) */
         public int cooldownSeconds = 0;
