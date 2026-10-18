@@ -1,5 +1,7 @@
 package com.eliteessentials.services;
 
+import com.eliteessentials.util.WorldBlocks;
+import com.hypixel.hytale.server.core.universe.world.accessor.SectionReader;
 import com.eliteessentials.EliteEssentials;
 import com.eliteessentials.commands.hytale.HytaleHomeCommand;
 import com.eliteessentials.commands.hytale.HytaleKitCommand;
@@ -36,7 +38,6 @@ import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntitySta
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
@@ -739,15 +740,15 @@ public class AliasService {
             int blockZ = (int) Math.floor(pos.z);
             
             long chunkIndex = ChunkUtil.indexChunkFromBlock(blockX, blockZ);
-            WorldChunk chunk = world.getChunk(chunkIndex);
-            if (chunk == null) {
+            if (!WorldBlocks.isColumnInMemory(world, chunkIndex)) {
                 ctx.sendMessage(Message.raw("Chunk not loaded.").color("#FF5555"));
                 return;
             }
             
+            SectionReader blocks = WorldBlocks.reader(world);
             int topY = -1;
             for (int y = 255; y >= 0; y--) {
-                BlockType blockType = chunk.getBlockType(blockX, y, blockZ);
+                BlockType blockType = WorldBlocks.blockType(blocks, blockX, y, blockZ);
                 if (blockType != null && blockType.getMaterial() == BlockMaterial.Solid) {
                     topY = y + 1;
                     break;

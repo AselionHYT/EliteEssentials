@@ -133,7 +133,7 @@ public class HytaleSetHomeCommand extends ElitePlayerCommand {
                 ctx.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("homeSet", "name", homeName), "#55FF55"));
             }
             case LIMIT_REACHED -> {
-                int max = homeService.getMaxHomes(playerId);
+                int max = homeService.getMaxHomes(playerId, worldName);
                 ctx.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("homeLimitReached", "max", String.valueOf(max)), "#FF5555"));
             }
             case INVALID_NAME -> ctx.sendMessage(MessageFormatter.formatWithFallback(configManager.getMessage("homeInvalidName"), "#FF5555"));
