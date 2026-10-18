@@ -58,14 +58,13 @@ public class HomeService {
             return Result.INVALID_NAME;
         }
         
-        // Check if updating existing home (doesn't count against limit)
-        boolean isUpdate = playerFile.hasHome(normalizedName);
-        
-        if (!isUpdate) {
-            int maxHomes = getMaxHomes(playerId);
-            if (playerFile.getHomeCount() >= maxHomes) {
-                return Result.LIMIT_REACHED;
-            }
+        // Overwriting a home in the same budget never counts against the limit; worlds listed
+        // in homes.worldHomeLimits have their own budget (HomeLimits).
+        Map<String, Integer> worldLimits = worldHomeLimits();
+        String world = location == null ? null : location.getWorld();
+        int sharedMax = HomeLimits.bucketOf(world, worldLimits) == null ? getMaxHomes(playerId) : 0;
+        if (HomeLimits.wouldExceed(playerFile.getHomes(), normalizedName, world, worldLimits, sharedMax)) {
+            return Result.LIMIT_REACHED;
         }
 
         Home home = new Home(normalizedName, location);
@@ -202,6 +201,36 @@ public class HomeService {
      */
     public int getMaxHomes(UUID playerId) {
         return PermissionService.get().getMaxHomes(playerId);
+    }
+
+    /**
+     * Maximum homes for a player in a world: the world's own limit from homes.worldHomeLimits,
+     * else {@link #getMaxHomes(UUID)}.
+     */
+    public int getMaxHomes(UUID playerId, String world) {
+        Map<String, Integer> worldLimits = worldHomeLimits();
+        if (HomeLimits.bucketOf(world, worldLimits) != null) {
+            return HomeLimits.limitFor(world, worldLimits, 0);
+        }
+        return getMaxHomes(playerId);
+    }
+
+    /** Number of homes that count against {@link #getMaxHomes(UUID)} (homes in limited worlds excluded). */
+    public int getSharedHomeCount(UUID playerId) {
+        PlayerFile playerFile = storage.getPlayer(playerId);
+        if (playerFile == null) {
+            return 0;
+        }
+        return HomeLimits.countIn(playerFile.getHomes(), null, worldHomeLimits());
+    }
+
+    private static Map<String, Integer> worldHomeLimits() {
+        com.eliteessentials.EliteEssentials plugin = com.eliteessentials.EliteEssentials.getInstance();
+        if (plugin == null || plugin.getConfigManager() == null) {
+            return Map.of();
+        }
+        Map<String, Integer> limits = plugin.getConfigManager().getConfig().homes.worldHomeLimits;
+        return limits == null ? Map.of() : limits;
     }
 
     /**
